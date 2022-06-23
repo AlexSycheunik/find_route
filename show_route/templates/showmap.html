@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Map to find route</title>
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+
+  <!-- Load Leaflet from CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+    integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+    crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+    integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+    crossorigin=""></script>
+
+  <!-- Load Esri Leaflet from CDN -->
+  <script src="https://unpkg.com/esri-leaflet@2.5.0/dist/esri-leaflet.js"
+    integrity="sha512-ucw7Grpc+iEQZa711gcjgMBnmd9qju1CICsRaryvX7HJklK0pGl/prxKvtHwpgm5ZHdvAil7YPxI1oWPOWK3UQ=="
+    crossorigin=""></script>
+
+  <!-- Load Esri Leaflet Geocoder from CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/esri-leaflet-geocoder@2.3.3/dist/esri-leaflet-geocoder.css"
+    integrity="sha512-IM3Hs+feyi40yZhDH6kV8vQMg4Fh20s9OzInIIAc4nx7aMYMfo+IenRUekoYsHZqGkREUgx0VvlEsgm7nCDW9g=="
+    crossorigin="">
+  <script src="https://unpkg.com/esri-leaflet-geocoder@2.3.3/dist/esri-leaflet-geocoder.js"
+    integrity="sha512-HrFUyCEtIpxZloTgEKKMq4RFYhxjJkCiF5sDxuAokklOeZ68U2NPfh4MFtyIVWlsKtVbK5GD2/JzFyAfvT5ejA=="
+    crossorigin=""></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  <style>
+    body { margin:0; padding:0; }
+    #map { position: absolute; top:0; bottom:0; right:0; left:0; }
+    #myButton{ position:absolute; top: 9px; left:60px; width:50px; height:50px; z-index:2000; }
+	#myBlock{
+				width: 300px; 
+				height: 150px;
+    			background-color: rgba(180, 238, 180, 1);
+    			border: solid 1px black; 
+    			border-radius: 20px ;
+				box-shadow: 0 0 5px #888;
+				left: 61px;
+				padding: 0.5em;
+				position: absolute;
+				top: 9px;
+				z-index: 1000;
+			}
+			
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<div id='myBlock' >
+		<p style='position:absolute; z-index:1000; top:1px; text-align:center;'>Фильтр по транспорту:</p>
+		<p style='position:absolute; z-index:1000; top:40px; margin-left:10px;'>Вес: <input type="number" id="machineWeight" placeholder="т." onchange='eventFormMW(this.value)'></p>
+		<p style='position:absolute; z-index:1000; top:80px; margin-left:10px;'>Высота: <input type="number" id="machineHeight" placeholder="м." onchange='eventFormMH(this.value)'></p>
+		<p style='position:absolute; z-index:1000; top:120px; margin-left:10px;'>Ширина: <input type="number" id="machineWidth" placeholder="м." onchange='eventFormW(this.value)'></p>
+</div>
+<script>
+  machineWeight = 0;
+  machineHeight = 0;
+  machineWidth = 0;
+  function eventFormMW(value) {
+  machineWeight = value
+  }
+  function eventFormMH(value) {
+  machineHeight = value
+  }
+  function eventFormW(value) {
+  machineWidth = value
+  }
+  var map = L.map('map').setView([52,23], 10);
+  data={};
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+  var gcs = L.esri.Geocoding.geocodeService();
+  var count=0;
+  map.on('click', (e)=>{
+    count+=1;
+    gcs.reverse().latlng(e.latlng).run((err, res)=>{
+      if(err) return;
+      L.marker(res.latlng).addTo(map).bindPopup(res.address.Match_addr).openPopup();
+      k=count.toString()
+      data[k+'lat']=res.latlng['lat'];
+      data[k+'lon']=res.latlng['lng'];
+      if(count==2){
+        const baseurl="{% url 'showmap'%}";
+        const route_url=baseurl+data['1lat']+','+data['1lon']+','+data['2lat']+','+data['2lon']+','+machineWeight+','+machineHeight+','+machineWidth;
+        count=0;
+        window.location.replace(route_url);
+      }
+   });
+});
+</script>
+</body>
+</html>
